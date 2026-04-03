@@ -6,7 +6,7 @@
     Activity, Percent, Database, SplitSquareHorizontal, Diff
   } from 'lucide-svelte';
 
-  // Jedno velké pole pro syrová data (vložíš tam všechna čísla naráz)
+  // Jedno velké pole pro syrová data
   let rawInput = $state(`16 17 18 15 22 18 19 17 16 16
 15 15 17 19 22 22 16 18 16 15
 19 19 19 16 17 15 15 15 20 20
@@ -14,7 +14,7 @@
 16 22 22 18 19 15 19 21 22 16
 18 20 15 16 19 16 17 19 18 22`);
 
-  let validDataRows = $state([]); // Pro tisk testu (tabulka x_i a n_i)
+  let validDataRows = $state([]);
   let tableData = $state([]);
   let totalN = $state(0), mean = $state(0), median = $state(0), mode = $state([]);
   let meanAbsDev = $state(0), variance = $state(0), stdDev = $state(0), coefVar = $state(0);
@@ -31,7 +31,6 @@
   }
 
   function calculateStats() {
-    // 1. Zpracování syrového vstupu na pole čísel
     let numbers = rawInput.split(/[\s,]+/).map(num => parseFloat(num)).filter(num => !isNaN(num));
     
     if (numbers.length === 0) {
@@ -42,13 +41,11 @@
       return;
     }
 
-    // 2. AUTOMATICKÝ VÝPOČET ČETNOSTÍ
     let freqMap = {};
     numbers.forEach(num => {
       freqMap[num] = (freqMap[num] || 0) + 1;
     });
 
-    // Převedeme na pole objektů a seřadíme podle hodnoty x
     let validRows = Object.keys(freqMap).map(key => ({
       x: parseFloat(key),
       n: freqMap[key]
@@ -56,17 +53,14 @@
 
     validDataRows = validRows;
 
-    // 3. STATISTICKÉ VÝPOČTY
     let sortedNumbers = [...numbers].sort((a, b) => a - b);
     let _totalN = numbers.length;
     let _sumXN = numbers.reduce((a, b) => a + b, 0);
     let _mean = _sumXN / _totalN;
 
-    // Modus
     let maxFreq = Math.max(...Object.values(freqMap));
     mode = Object.keys(freqMap).filter(x => freqMap[x] === maxFreq).map(Number);
 
-    // Medián
     if (_totalN % 2 !== 0) {
       median = sortedNumbers[Math.floor(_totalN / 2)];
     } else {
@@ -129,8 +123,8 @@
         responsive: true, maintainAspectRatio: false, cutout: '60%',
         plugins: { 
           legend: { 
-            position: 'right', 
-            labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 13, weight: '500' } }
+            position: window.innerWidth < 600 ? 'bottom' : 'right', 
+            labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 12 } }
           }
         }
       }
@@ -167,17 +161,17 @@
 </script>
 
 <main class="app-container">
-  <header class="page-header">
+  <header class="page-header no-print">
     <div class="header-text">
       <div class="title-with-icon">
-        <BarChart3 size={36} class="text-blue" strokeWidth={2.5} />
+        <BarChart3 size={32} class="text-blue" strokeWidth={2.5} />
         <h1>Statistický analyzátor</h1>
       </div>
-      <p>Moderní nástroj pro bleskové zpracování rozdělení četností.</p>
+      <p>Bleskové zpracování rozdělení četností.</p>
     </div>
     {#if tableData.length > 0}
-      <button class="btn-export no-print" onclick={printPDF}>
-        <Printer size={20} strokeWidth={2.5} />
+      <button class="btn-export" onclick={printPDF}>
+        <Printer size={18} strokeWidth={2.5} />
         Exportovat PDF
       </button>
     {/if}
@@ -185,10 +179,9 @@
   
   <section class="card input-section no-print">
     <div class="section-heading">
-      <h2><Database size={24} class="heading-icon" /> Syrová data</h2>
-      <p class="subtitle">Vložte všechna čísla souboru (oddělená mezerou, čárkou nebo novým řádkem).</p>
+      <h2><Database size={20} class="heading-icon" /> Syrová data</h2>
+      <p class="subtitle">Vložte všechna čísla souboru najednou.</p>
     </div>
-    
     <div class="table-wrapper">
       <textarea bind:value={rawInput} placeholder="Sem vložte všechna čísla..."></textarea>
     </div>
@@ -197,19 +190,19 @@
   {#if tableData.length > 0}
     <section class="card results-section">
       <div class="section-heading">
-        <h2><Calculator size={24} class="heading-icon" /> Výpočtová tabulka četností</h2>
+        <h2><Calculator size={20} class="heading-icon" /> Tabulka četností</h2>
       </div>
-      <div class="table-wrapper">
+      <div class="table-wrapper scrollable">
         <table class="modern-table result-table">
           <thead>
             <tr>
               <th><i>x<sub>i</sub></i></th>
               <th><i>n<sub>i</sub></i></th>
-              <th><i>x<sub>i</sub> &middot; n<sub>i</sub></i></th>
-              <th>|<i>x<sub>i</sub> &minus; x&#772;</i>|</th>
-              <th>|<i>x<sub>i</sub> &minus; x&#772;</i>| &middot; <i>n<sub>i</sub></i></th>
-              <th>(<i>x<sub>i</sub> &minus; x&#772;</i>)<sup>2</sup></th>
-              <th>(<i>x<sub>i</sub> &minus; x&#772;</i>)<sup>2</sup> &middot; <i>n<sub>i</sub></i></th>
+              <th><i>x<sub>i</sub>&middot;n<sub>i</sub></i></th>
+              <th>|<i>x<sub>i</sub>&minus;x&#772;</i>|</th>
+              <th>|<i>x<sub>i</sub>&minus;x&#772;</i>|&middot;<i>n<sub>i</sub></i></th>
+              <th>(<i>x<sub>i</sub>&minus;x&#772;</i>)<sup>2</sup></th>
+              <th>(<i>x<sub>i</sub>&minus;x&#772;</i>)<sup>2</sup>&middot;<i>n<sub>i</sub></i></th>
             </tr>
           </thead>
           <tbody>
@@ -242,39 +235,39 @@
 
     <section class="card stats-section">
       <div class="section-heading">
-        <h2><TrendingUp size={24} class="heading-icon" /> Charakteristiky</h2>
+        <h2><TrendingUp size={20} class="heading-icon" /> Charakteristiky</h2>
       </div>
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="stat-label"><Hash size={16} /> Rozsah (<i>n</i>)</span>
+          <span class="stat-label"><Hash size={14} /> Rozsah (<i>n</i>)</span>
           <span class="stat-value text-blue">{totalN}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label"><Calculator size={16} /> Průměr (<i>x&#772;</i>)</span>
+          <span class="stat-label"><Calculator size={14} /> Průměr (<i>x&#772;</i>)</span>
           <span class="stat-value">{format(mean)}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label"><SplitSquareHorizontal size={16} /> Medián (<i>x&#771;</i>)</span>
+          <span class="stat-label"><SplitSquareHorizontal size={14} /> Medián (<i>x&#771;</i>)</span>
           <span class="stat-value">{format(median)}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label"><Target size={16} /> Modus (<i>x&#770;</i>)</span>
+          <span class="stat-label"><Target size={14} /> Modus (<i>x&#770;</i>)</span>
           <span class="stat-value">{mode.join(', ')}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label"><Diff size={16} /> Prům. odchylka (<i>d&#772;</i>)</span>
+          <span class="stat-label"><Diff size={14} /> Prům. odch. (<i>d&#772;</i>)</span>
           <span class="stat-value">{format(meanAbsDev)}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label"><Activity size={16} /> Rozptyl (<i>s<sub>x</sub></i><sup>2</sup>)</span>
+          <span class="stat-label"><Activity size={14} /> Rozptyl (<i>s<sub>x</sub></i><sup>2</sup>)</span>
           <span class="stat-value">{format(variance)}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label"><TrendingUp size={16} /> Směr. odchylka (<i>s<sub>x</sub></i>)</span>
+          <span class="stat-label"><TrendingUp size={14} /> Směr. odch. (<i>s<sub>x</sub></i>)</span>
           <span class="stat-value">{format(stdDev)}</span>
         </div>
         <div class="stat-card highlight-card">
-          <span class="stat-label"><Percent size={16} /> Variační koeficient</span>
+          <span class="stat-label"><Percent size={14} /> Variační koef.</span>
           <span class="stat-value text-white">{format(coefVar)} %</span>
         </div>
       </div>
@@ -283,80 +276,164 @@
     <section class="charts-container">
       <div class="card chart-box">
         <div class="section-heading">
-          <h3><PieChart size={20} class="heading-icon" /> Podíl hodnot</h3>
+          <h3><PieChart size={18} class="heading-icon" /> Podíl hodnot</h3>
         </div>
         <div class="canvas-wrapper"><canvas bind:this={pieCanvas}></canvas></div>
       </div>
       <div class="card chart-box">
         <div class="section-heading">
-          <h3><LineChart size={20} class="heading-icon" /> Polygon četností</h3>
+          <h3><LineChart size={18} class="heading-icon" /> Polygon četností</h3>
         </div>
         <div class="canvas-wrapper"><canvas bind:this={lineCanvas}></canvas></div>
       </div>
     </section>
 
     <section class="print-only page-break test-page">
-      <header class="page-header" style="margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
+      <header class="page-header-print">
         <h1>Statistika - Písemná práce</h1>
-        <p>Jméno a příjmení: _________________________________________ Třída: _______</p>
+        <p>Jméno: _________________________________ Třída: _______ Datum: _________</p>
       </header>
-      <div class="section-heading"><h2>Zadané hodnoty</h2></div>
-      <p style="font-size: 1.1rem; line-height: 1.6; background: #f8fafc; padding: 20px; border-radius: 8px;">{rawInput}</p>
-      
-      <div class="section-heading"><h2>Úkol 1: Sestavte tabulku četností a vypočítejte ji</h2></div>
-      <div class="table-wrapper"><table class="modern-table result-table empty-test-table">
-          <thead><tr><th><i>x<sub>i</sub></i></th><th><i>n<sub>i</sub></i></th><th><i>x<sub>i</sub> &middot; n<sub>i</sub></i></th><th>|<i>x<sub>i</sub> &minus; x&#772;</i>|</th><th>|<i>x<sub>i</sub> &minus; x&#772;</i>| &middot; <i>n<sub>i</sub></i></th><th>(<i>x<sub>i</sub> &minus; x&#772;</i>)<sup>2</sup></th><th>(<i>x<sub>i</sub> &minus; x&#772;</i>)<sup>2</sup> &middot; <i>n<sub>i</sub></i></th></tr></thead>
-          <tbody>{#each Array(8) as _}<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{/each}</tbody>
-          <tfoot><tr class="sum-row"><td><strong>Σ</strong></td><td></td><td></td><td>-</td><td></td><td>-</td><td></td></tr></tfoot>
-      </table></div>
-      <div class="section-heading"><h2>Úkol 2: Charakteristiky</h2></div>
-      <div class="stats-grid">{#each Array(8) as _}<div class="stat-card empty-stat"></div>{/each}</div>
-      <div class="section-heading"><h2>Úkol 3: Grafy</h2></div>
-      <div class="charts-container">
-        <div><h3>Kruhový diagram</h3><div class="card chart-box" style="height: 300px; border: 2px dashed #cbd5e1;"></div></div>
-        <div><h3>Spojnicový diagram</h3><div class="card chart-box" style="height: 300px; border: 2px dashed #cbd5e1;"></div></div>
+      <div class="print-content">
+        <h3>Zadané hodnoty:</h3>
+        <p class="raw-data-print">{rawInput}</p>
+        
+        <h3>Úkol 1: Sestavte tabulku četností</h3>
+        <table class="modern-table empty-test-table">
+            <thead><tr><th><i>x<sub>i</sub></i></th><th><i>n<sub>i</sub></i></th><th><i>x<sub>i</sub> &middot; n<sub>i</sub></i></th><th>|<i>x<sub>i</sub> &minus; x&#772;</i>|</th><th>...</th><th>...</th><th>...</th></tr></thead>
+            <tbody>{#each Array(8) as _}<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{/each}</tbody>
+            <tfoot><tr class="sum-row"><td><strong>Σ</strong></td><td></td><td></td><td>-</td><td></td><td>-</td><td></td></tr></tfoot>
+        </table>
+
+        <h3>Úkol 2: Vypočítejte charakteristiky</h3>
+        <div class="stats-grid-print">
+          {#each Array(8) as _}<div class="print-empty-box"></div>{/each}
+        </div>
       </div>
     </section>
 
   {:else}
     <div class="empty-state">
-      <div class="empty-icon"><Database size={48} strokeWidth={1.5} color="#cbd5e1" /></div>
-      <h3>Vložte data...</h3>
+      <Database size={40} strokeWidth={1.5} color="#cbd5e1" />
+      <p>Vložte data pro zahájení výpočtů.</p>
     </div>
   {/if}
 </main>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-  :global(body) { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 0; }
-  .app-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+
+  :global(body) { 
+    font-family: 'Inter', sans-serif; 
+    background-color: #f8fafc; 
+    color: #0f172a; 
+    margin: 0; 
+    padding: 0; 
+    line-height: 1.5;
+  }
+
+  .app-container { 
+    max-width: 1100px; 
+    margin: 0 auto; 
+    padding: 24px 16px; 
+  }
+
+  .page-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 24px; 
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
   .title-with-icon { display: flex; align-items: center; gap: 12px; }
-  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-  .btn-export { display: flex; align-items: center; gap: 10px; background: #3b82f6; color: white; border: none; padding: 12px 24px; font-weight: 600; border-radius: 12px; cursor: pointer; }
-  .card { background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 32px; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-  .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
-  textarea { width: 100%; height: 150px; border: none; padding: 20px; font-family: monospace; font-size: 1rem; box-sizing: border-box; resize: vertical; }
+  .title-with-icon h1 { font-size: 1.5rem; margin: 0; font-weight: 700; }
+  .header-text p { color: #64748b; margin: 4px 0 0 0; font-size: 0.9rem; }
+
+  .btn-export { 
+    display: flex; align-items: center; gap: 8px; 
+    background: #3b82f6; color: white; border: none; 
+    padding: 10px 16px; font-weight: 600; border-radius: 10px; 
+    cursor: pointer; font-size: 0.9rem;
+    transition: transform 0.1s;
+  }
+  .btn-export:active { transform: scale(0.98); }
+
+  .card { 
+    background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; 
+    padding: 20px; margin-bottom: 24px; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+  }
+
+  .section-heading { margin-bottom: 16px; }
+  .section-heading h2, .section-heading h3 { 
+    display: flex; align-items: center; gap: 8px; 
+    font-size: 1.1rem; font-weight: 600; margin: 0; 
+  }
+  .subtitle { color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0; }
+  .heading-icon { color: #94a3b8; }
+
+  .table-wrapper { border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+  .scrollable { overflow-x: auto; }
+
+  textarea { 
+    width: 100%; height: 120px; border: none; padding: 16px; 
+    font-family: monospace; font-size: 1rem; box-sizing: border-box; 
+    resize: vertical; display: block;
+  }
   textarea:focus { outline: none; background: #f0f9ff; }
-  .modern-table { width: 100%; border-collapse: collapse; text-align: center; }
-  .modern-table th { background-color: #f8fafc; padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; }
-  .modern-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-  .sum-row { background-color: #f8fafc; border-top: 2px solid #e2e8f0; }
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-  .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+
+  .modern-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .modern-table th { 
+    background-color: #f8fafc; padding: 12px; 
+    border-bottom: 1px solid #e2e8f0; color: #475569; 
+    font-weight: 600; text-align: center;
+  }
+  .modern-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center; }
+  .sum-row { background-color: #f8fafc; border-top: 2px solid #e2e8f0; font-weight: 700; }
+
+  .stats-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+    gap: 12px; 
+  }
+  .stat-card { 
+    background: #f8fafc; border: 1px solid #e2e8f0; 
+    border-radius: 12px; padding: 16px; 
+  }
   .highlight-card { background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: white; }
-  .stat-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+  .stat-label { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #64748b; margin-bottom: 4px; }
   .highlight-card .stat-label { color: #bfdbfe; }
-  .stat-value { font-size: 1.5rem; font-weight: 700; }
-  .charts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-  .canvas-wrapper { height: 300px; position: relative; }
+  .stat-value { font-size: 1.2rem; font-weight: 700; }
+
+  .charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .canvas-wrapper { height: 280px; position: relative; }
+
+  .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+
+  /* MOBILNÍ ÚPRAVY */
+  @media (max-width: 640px) {
+    .app-container { padding: 16px 12px; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .btn-export { width: 100%; justify-content: center; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .modern-table { font-size: 0.8rem; }
+    .stat-value { font-size: 1rem; }
+    .card { padding: 16px; }
+  }
+
+  /* TISK */
   @media screen { .print-only { display: none !important; } }
   @media print {
     @page { size: A4; margin: 15mm; }
     .no-print { display: none !important; }
     .print-only { display: block !important; }
-    body { background-color: white; padding: 10mm; }
+    body { background-color: white; padding: 0; }
     .page-break { break-before: page; }
-    .empty-test-table td { height: 35px; }
-    .empty-stat { height: 60px; border: 1px solid #cbd5e1; }
+    .page-header-print { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+    .raw-data-print { background: #eee; padding: 10px; font-size: 0.9rem; }
+    .modern-table th, .modern-table td { border: 1px solid #ccc; padding: 8px; }
+    .stats-grid-print { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .print-empty-box { border: 1px solid #ccc; height: 50px; }
   }
 </style>
